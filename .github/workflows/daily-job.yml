@@ -1,0 +1,32 @@
+name: 每日生成股票故事
+on:
+  schedule:
+    - cron: '0 0 * * *' # 每天 UTC 時間 00:00 (台灣時間早上 8 點)
+  workflow_dispatch: # 讓你可以隨時在 GitHub 後台點一顆按鈕手動觸發 (取代舊的密碼輸入)
+
+jobs:
+  generate-story:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: 取得程式碼
+        uses: actions/checkout@v3
+
+      - name: 設定 Node.js 環境
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: 執行 AI 故事生成腳本
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: node update.js
+
+      - name: 將最新故事寫入 GitHub 儲存庫
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add data.json
+          git commit -m "📝 新增今日股票故事" || exit 0
+          git push
